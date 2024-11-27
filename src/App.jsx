@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Blog from "./components/Blog";
 import blogService from "./services/blogs";
 
@@ -10,19 +10,15 @@ import loginService from "./services/login";
 import Notification from "./components/Notification";
 import AddBlog from "./components/AddBlog";
 
+// Toggleable
+import Toggleable from "./components/Toggleable";
+
 const App = () => {
   const [blogs, setBlogs] = useState([]);
   const [notification, setNotification] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-
-  const showNotification = (message, status = "200") => {
-    setNotification({ message, status });
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
-  };
 
   useEffect(() => {
     blogService.getAll().then((blogs) => setBlogs(blogs));
@@ -36,6 +32,15 @@ const App = () => {
       blogService.setToken(localUser.token);
     }
   }, []);
+
+  const blogFormRef = useRef();
+
+  const showNotification = (message, status = "200") => {
+    setNotification({ message, status });
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  };
 
   const handleSubmitLogin = async (event) => {
     event.preventDefault();
@@ -90,6 +95,7 @@ const App = () => {
   };
 
   const updateBlogsUseState = (data) => {
+    blogFormRef.current.handleVisibility();
     setBlogs(blogs.concat(data));
   };
   return (
@@ -112,6 +118,7 @@ const App = () => {
           handleGetToken={handleGetToken}
           showNotification={showNotification}
           updateBlogsUseState={updateBlogsUseState}
+          blogFormRef={blogFormRef}
         />
       )}
     </div>
@@ -125,6 +132,7 @@ const Dashboard = ({
   handleGetToken,
   showNotification,
   updateBlogsUseState,
+  blogFormRef,
 }) => {
   return (
     <div>
@@ -146,12 +154,14 @@ const Dashboard = ({
           </button>
         </div>
       </div>
+      <Toggleable buttonLabel="Add New Blog" ref={blogFormRef}>
+        <AddBlog
+          showNotification={showNotification}
+          user={user}
+          updateBlogsUseState={updateBlogsUseState}
+        />
+      </Toggleable>
 
-      <AddBlog
-        showNotification={showNotification}
-        user={user}
-        updateBlogsUseState={updateBlogsUseState}
-      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {blogs.map((blog) => (
           <Blog key={blog.id} blog={blog} />
